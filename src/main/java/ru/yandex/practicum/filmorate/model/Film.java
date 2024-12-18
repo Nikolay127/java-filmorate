@@ -1,6 +1,5 @@
 package ru.yandex.practicum.filmorate.model;
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.*;
@@ -20,7 +19,6 @@ public class Film {
     protected Long id;
 
     @NonNull
-    @NotBlank(message = "Email cannot be empty.")
     protected String name;
 
     @NonNull

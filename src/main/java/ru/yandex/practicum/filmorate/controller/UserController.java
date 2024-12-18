@@ -18,11 +18,12 @@ public class UserController {
 
     private static final Logger log = LoggerFactory.getLogger(UserController.class);
     private final Map<Long, User> users = new HashMap<>();
+    private Long userIdCounter = 0L;
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
     public Collection<User> getUsers() {
-        log.info("Вызван метод передачи списка всех пользователей");
+        log.info("Вызван метод передачи списка всех пользователей: {}", users.values());
         return users.values();
     }
 
@@ -30,12 +31,13 @@ public class UserController {
     @ResponseStatus(HttpStatus.CREATED)
     public User createUser(@Valid @RequestBody User user) {
         log.info("Начался процесс создания пользователя {}", user);
-        validateUserName(user);
+        validateBlankFields(user);
+        checkUserName(user);
         if (user.getId() != null) {
             log.error("Пользователь {} не создан из-за переданного id", user);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Id нового пользователя генерируется автоматически");
         }
-        user.setId(getNextId());
+        setUserId(user);
         users.put(user.getId(), user);
         log.info("Процесс обновления пользователя {} - успешно завершен", user);
         return user;
@@ -46,7 +48,8 @@ public class UserController {
     @ResponseStatus(HttpStatus.OK)
     public User updateUser(@Valid @RequestBody User user) {
         log.info("Начался процесс обновления пользователя {}", user);
-        validateUserName(user);
+        validateBlankFields(user);
+        checkUserName(user);
         //Предполагаем, что нам передали все параметры, в ТЗ не указано иное
         if (!users.containsKey(user.getId())) {
             log.error("Пользователь {} не найден", user);
@@ -57,18 +60,23 @@ public class UserController {
         return user;
     }
 
-    private long getNextId() {
-        long currentMaxId = users.keySet()
-                .stream()
-                .mapToLong(id -> id)
-                .max()
-                .orElse(0);
-        return ++currentMaxId;
-    }
-
-    private void validateUserName(User user) {
+    private void checkUserName(User user) {
         if (user.getName() == null || user.getName().isBlank()) {
             user.setName(user.getLogin());
         }
+    }
+
+    private void validateBlankFields(User user) {
+        if (user.getEmail().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email" +
+                    " нового пользователя не может быть пустым");
+        } else if (user.getLogin().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Логин" +
+                    " нового пользователя не может быть пустым");
+        }
+    }
+
+    private void setUserId(User user) {
+        user.setId(++userIdCounter);
     }
 }
