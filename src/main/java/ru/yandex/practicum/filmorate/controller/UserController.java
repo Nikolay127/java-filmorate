@@ -23,8 +23,10 @@ public class UserController {
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
     public Collection<User> getUsers() {
-        log.info("Вызван метод передачи списка всех пользователей: {}", users.values());
-        return users.values();
+        log.info("Вызван метод передачи списка всех пользователей");
+        Collection<User> allUsers = users.values();
+        log.info("Сформирован и передан список всех пользователей: {}", allUsers);
+        return allUsers;
     }
 
     @PostMapping

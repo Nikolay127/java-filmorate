@@ -24,8 +24,10 @@ public class FilmController {
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
     public Collection<Film> getFilms() {
-        log.info("Вызван метод передачи списка всех фильмов: {}", films.values());
-        return films.values();
+        log.info("Вызван метод передачи списка всех фильмов");
+        Collection<Film> allFilms = films.values();
+        log.info("Сформирован и передан список всех фильмов: {}", allFilms);
+        return allFilms;
     }
 
     @PostMapping
