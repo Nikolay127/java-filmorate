@@ -43,14 +43,4 @@ public class FilmsTest {
     }
 
 
-    /*
-    Не понимаю, как прописать тесты не для аннотации NotNull. Как именно ловить ошибки.
-     */
-    @Test
-    void check() {
-        Film film = new Film("Forest Gump", "shs", LocalDate.of(2024,12,17), -300L);
-        FilmController filmController = new FilmController();
-        film = filmController.createFilm(film);
-
-    }
 }
