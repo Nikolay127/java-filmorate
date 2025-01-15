@@ -25,15 +25,27 @@ public class UserService {
     }
 
     public Collection<User> getAllUsers() {
-        //Не вижу смысла логировать такие вызовы именно в методе сервиса
+        log.info("В сервисе {} запущен метод по получению списка всех пользователей", UserService.class.getName());
         return userStorage.getAllUsers();
     }
 
     public User createUser(User user) {
+        log.info("В сервисе {} запущен метод по созданию пользователя", UserService.class.getName());
+        validateBlankFields(user);
+        log.info("У пользователя {} успешно пройдена валидация пустых полей", user);
+        checkUserName(user);
+        log.info("У пользователя {} успешно пройдена валидация имени", user);
+        log.info("Вызывается метод по созданию пользователя {}", user);
         return userStorage.createUser(user);
     }
 
     public User updateUser(User user) {
+        log.info("В сервисе {} запущен метод по обновлению пользователя", UserService.class.getName());
+        validateBlankFields(user);
+        log.info("У обновляемого пользователя {} успешно пройдена валидация пустых полей", user);
+        checkUserName(user);
+        log.info("У обновляемого пользователя {} успешно пройдена валидация имени", user);
+        log.info("Вызывается метод у {} по обновлению пользователя {}", UserStorage.class.getName(), user);
         return userStorage.updateUser(user);
     }
 
@@ -98,5 +110,21 @@ public class UserService {
 
     private boolean isUserExist(Long userId) {
         return userStorage.getAllUsers().contains(userStorage.getUser(userId));
+    }
+
+    private void checkUserName(User user) {
+        if (user.getName() == null || user.getName().isBlank()) {
+            user.setName(user.getLogin());
+        }
+    }
+
+    private void validateBlankFields(User user) {
+        if (user.getEmail().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email" +
+                    " нового пользователя не может быть пустым");
+        } else if (user.getLogin().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Логин" +
+                    " нового пользователя не может быть пустым");
+        }
     }
 }

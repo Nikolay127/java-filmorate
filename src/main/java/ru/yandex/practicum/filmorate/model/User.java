@@ -23,7 +23,7 @@ import java.util.Set;
 public class User {
 
     @JsonIgnore
-    private final Set<User> friends = new HashSet<>();
+    private Set<User> friends = new HashSet<>();
 
     protected Long id;
 

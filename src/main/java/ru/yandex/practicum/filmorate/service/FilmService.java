@@ -10,6 +10,7 @@ import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -28,15 +29,23 @@ public class FilmService {
     }
 
     public Collection<Film> getAllFilms() {
-        //Не вижу смысла логировать такие вызовы именно в методе сервиса
+        log.info("В сервисе {} вызван метод по получению списка всех фильмов", FilmService.class.getName());
         return filmStorage.getAllFilms();
     }
 
     public Film createFilm(Film film) {
+        log.info("В сервисе {} вызван метод по созданию фильма", FilmService.class.getName());
+        validateDataReleaseAndName(film);
+        log.info("У фильма {} успешно пройдена валидация даты релиза и названия", film);
+        log.info("Вызывается метод по созданию фильма {}", film);
         return filmStorage.createFilm(film);
     }
 
     public Film updateFilm(Film film) {
+        log.info("В сервисе {} вызван метод по обновлению фильма", FilmService.class.getName());
+        validateDataReleaseAndName(film);
+        log.info("У обновляемого фильма {} успешно пройдена валидация даты релиза и названия", film);
+        log.info("Вызывается метод по обновлению фильма {}", film);
         return filmStorage.updateFilm(film);
     }
 
@@ -48,7 +57,8 @@ public class FilmService {
         if (!isUserExist(userId)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Запрашиваемого пользователя нет");
         }
-        filmStorage.getFilm(filmId).getLikes().add(userId);
+        filmStorage.getFilm(filmId).addLike(userId);
+//        filmStorage.getFilm(filmId).getLikes().add(userId);
         log.info("Поставлен лайка фильму с id {} от пользователя с id {}", filmId, userId);
         return filmStorage.getFilm(filmId);
     }
@@ -61,7 +71,8 @@ public class FilmService {
         if (!isUserExist(userId)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Запрашиваемого пользователя нет");
         }
-        filmStorage.getFilm(filmId).getLikes().remove(userId);
+        filmStorage.getFilm(filmId).removeLike(userId);
+//        filmStorage.getFilm(filmId).getLikes().remove(userId);
         log.info("Удален лайк фильму с id {} от пользователя с id {}", filmId, userId);
         return filmStorage.getFilm(filmId);
     }
@@ -70,7 +81,7 @@ public class FilmService {
         log.info("Вызван метод получения самых популярных фильмов");
         List<Film> allFilms = new ArrayList<>(filmStorage.getAllFilms());
         // Сортируем фильмы по количеству лайков в порядке убывания
-        allFilms.sort((film1, film2) -> Integer.compare(film2.getLikes().size(), film1.getLikes().size()));
+        allFilms.sort((film1, film2) -> Long.compare(film2.getRate(), film1.getRate()));
         // Ограничиваем количество фильмов до указанного числа
         List<Film> popularFilms = allFilms.subList(0, Math.min(id.intValue(), allFilms.size()));
         log.info("Сформирован список популярных фильмов: {}", popularFilms);
@@ -83,5 +94,14 @@ public class FilmService {
 
     private boolean isUserExist(Long userId) {
         return userStorage.getAllUsers().contains(userStorage.getUser(userId));
+    }
+
+    private void validateDataReleaseAndName(Film film) {
+        if (film.getReleaseDate().isBefore(LocalDate.of(1895, 12, 28))) {
+            log.error("Фильм {} не создан, по причине неверной даты релиза", film);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Дата релиза — не раньше 28 декабря 1895 года");
+        } else if (film.getName().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Название фильма не может быть пустым");
+        }
     }
 }

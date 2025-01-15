@@ -28,14 +28,13 @@ public class InMemoryUserStorage implements UserStorage {
 
     //метод для быстрого поиска одного конкретного пользователя
     public User getUser(Long id) {
+        log.info("В хранилище {} вызван метод по получению пользователя", InMemoryUserStorage.class.getName());
         return users.get(id);
     }
 
     @Override
     public User createUser(User user) {
         log.info("Начался процесс создания пользователя {}", user);
-        validateBlankFields(user);
-        checkUserName(user);
         if (user.getId() != null) {
             log.error("Пользователь {} не создан из-за переданного id", user);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Id нового пользователя генерируется автоматически");
@@ -49,8 +48,6 @@ public class InMemoryUserStorage implements UserStorage {
     @Override
     public User updateUser(User user) {
         log.info("Начался процесс обновления пользователя {}", user);
-        validateBlankFields(user);
-        checkUserName(user);
         if (!users.containsKey(user.getId())) {
             log.error("Пользователь {} не найден", user);
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Пользователь не найден");
@@ -70,22 +67,6 @@ public class InMemoryUserStorage implements UserStorage {
         users.remove(user.getId());
         log.info("Процесс удаления пользователя {} - успешно завершен", user);
         return user;
-    }
-
-    private void checkUserName(User user) {
-        if (user.getName() == null || user.getName().isBlank()) {
-            user.setName(user.getLogin());
-        }
-    }
-
-    private void validateBlankFields(User user) {
-        if (user.getEmail().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email" +
-                    " нового пользователя не может быть пустым");
-        } else if (user.getLogin().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Логин" +
-                    " нового пользователя не может быть пустым");
-        }
     }
 
     private void setUserId(User user) {
