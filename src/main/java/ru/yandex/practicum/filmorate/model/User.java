@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Pattern;
@@ -7,6 +8,8 @@ import lombok.*;
 
 
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * User
@@ -18,6 +21,9 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @EqualsAndHashCode(of = {"id"})
 public class User {
+
+    @JsonIgnore
+    private Set<User> friends = new HashSet<>();
 
     protected Long id;
 

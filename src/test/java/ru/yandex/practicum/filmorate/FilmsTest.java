@@ -2,7 +2,6 @@ package ru.yandex.practicum.filmorate;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-import ru.yandex.practicum.filmorate.controller.FilmController;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import java.time.LocalDate;
@@ -43,14 +42,4 @@ public class FilmsTest {
     }
 
 
-    /*
-    Не понимаю, как прописать тесты не для аннотации NotNull. Как именно ловить ошибки.
-     */
-    @Test
-    void check() {
-        Film film = new Film("Forest Gump", "shs", LocalDate.of(2024,12,17), -300L);
-        FilmController filmController = new FilmController();
-        film = filmController.createFilm(film);
-
-    }
 }
