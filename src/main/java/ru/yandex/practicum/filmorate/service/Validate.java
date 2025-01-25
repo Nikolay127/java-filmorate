@@ -16,6 +16,9 @@ import java.util.List;
 @Slf4j
 public class Validate {
     public static void validateUser(UserDto user) {
+        log.info("В классе {} запущен метод по валидации пользователя с id = {}",
+                Validate.class.getName(),
+                user);
         if (user.getEmail() == null || !user.getEmail().contains("@")) {
             log.trace("введен неправильный формат Email");
             throw new ValidationException("электронная почта не может быть пустой и должна содержать символ @");
@@ -31,6 +34,9 @@ public class Validate {
     }
 
     public static void validateFilm(FilmDto film) {
+        log.info("В классе {} запущен метод по валидации фильма с id = {}",
+                Validate.class.getName(),
+                film);
         if (film.getName() == null || film.getName().isBlank()) {
             log.trace("не задано название фильма: {}", film.getName());
             throw new ValidationException("имя не может быть пустым");
@@ -52,31 +58,35 @@ public class Validate {
     }
 
     public static void validateGenre(List<Genre> allGenres, List<ID> genresFilm) {
+        log.info("В классе {} запущен метод по поиску жанров в БД", Validate.class.getName());
         List<Integer> listAllId = allGenres.stream().map(Genre::getId).toList();
         for (ID genre : genresFilm) {
             if (!listAllId.contains(genre.getId())) {
-                throw new ValidationException("жанр не найден в БД");
+                throw new NotFoundGenre("жанр не найден в БД");
             }
         }
     }
 
     public static void validateGenre(Genre genre) {
+        log.info("В классе {} запущен метод по валидации жанра {}", Validate.class.getName(), genre);
         if (genre == null) {
             throw new NotFoundGenre("жанр не указан");
         }
     }
 
-    public static void validateMpa(Mpa film) {
-        if (film == null) {
+    public static void validateMpa(Mpa mpa) {
+        log.info("В классе {} запущен метод по валидации рейтинга {}", Validate.class.getName(), mpa);
+        if (mpa == null) {
             throw new NotFoundRating("рейтинг не указан");
         }
     }
 
     public static void validateMpa(List<Mpa> allMpa, List<ID> mpaID) {
+        log.info("В классе {} запущен метод по поиску рейтингов в БД", Validate.class.getName());
         List<Integer> listAllID = allMpa.stream().map(Mpa::getId).toList();
         for (ID genre : mpaID) {
             if (!listAllID.contains(genre.getId())) {
-                throw new ValidationException("mpa не найден в БД");
+                throw new NotFoundRating("mpa не найден в БД");
             }
         }
     }

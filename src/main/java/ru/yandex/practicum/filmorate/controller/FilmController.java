@@ -38,6 +38,9 @@ public class FilmController {
 
     @GetMapping("{filmId}")
     public Optional<FilmDto> getFilmById(@PathVariable("filmId") Integer id) {
+        log.info("В контроллере {} запущен метод для получения пользователя с id = {}",
+                FilmController.class.getName(),
+                id);
         return filmService.getFilmById(id);
     }
 
@@ -47,9 +50,9 @@ public class FilmController {
         return filmService.updateFilm(request);
     }
 
-    //В ТЗ такого не было, но по логике вещей такой маппинг тоже имеет место быть
     @DeleteMapping("/{id}")
     public void deleteFilm(@PathVariable("id") final int filmId) {
+        log.info("В контроллере {} запущен метод для удаления пользователя", FilmController.class.getName());
         filmService.deleteFilm(filmId);
     }
 

@@ -21,54 +21,77 @@ public class UserService {
     private final UserStorage storage;
 
     public Optional<UserDto> createUser(RequestUser request) {
+        log.info("В классе {} запущен метод по созданию пользователя", UserService.class.getName());
         Validate.validateUser(request.getUserDto());
         UserDto newUser = storage.createUser(request).getUserDto();
-        log.debug("добавлен новый пользователь, id пользователя: {}", newUser.getId());
+        log.info("Добавлен новый пользователь, id пользователя: {}", newUser.getId());
         return Optional.of(newUser);
     }
 
     public void deleteUser(final int userID) {
+        log.info("В классе {} запущен метод по удалению пользователя с id = {}", UserService.class.getName(), userID);
         storage.deleteUser(userID);
-        log.debug("пользователь удален, id пользователя: id {} ", userID);
+        log.info("Пользователь удален, id пользователя: id {} ", userID);
     }
 
     public Optional<UserDto> updateUser(RequestUser request) {
+        log.info("В классе {} запущен метод по обновлению пользователя с id = {}",
+                UserService.class.getName(),
+                request.getId());
         Validate.validateUser(request.getUserDto());
+        log.info("Пользователь с id = {} успешно прошел валидацию", request.getId());
         if (storage.getUserById(request.getId()) == null) {
             throw new NotFoundUserException();
         }
         ResponseUser response = storage.updateUser(request);
-        log.debug("данные пользователя обновлены, id пользователя: {}", request.getId());
+        log.info("Данные пользователя обновлены, id пользователя: {}", request.getId());
         return Optional.of(response.getUserDto());
     }
 
     public Optional<List<UserDto>> getAllUsers() {
-        log.debug("возвращен список пользователей");
+        log.info("В классе {} запущен метод по получению всех пользователей", UserService.class.getName());
         return Optional.of(storage.getAllUsers().stream().map(ResponseUser::getUserDto).toList());
     }
 
     public Optional<UserDto> getUserByID(final int userID) {
+        log.info("В классе {} запущен метод по получению пользователя с id = {}", UserService.class.getName(), userID);
         return Optional.of(storage.getUserById(userID).getUserDto());
     }
 
     public Optional<UserDto> addFriend(final int newFriendID, final int userID) {
+        log.info("В классе {} запущен метод по добавлению в друзья пользователя с id = {} пользователю с id = {}",
+                UserService.class.getName(),
+                newFriendID,
+                userID);
         if (!storage.getListFriends(userID).contains(newFriendID)) {
             storage.addFriend(userID, newFriendID);
-            log.debug("список друзей пользователя {} : {}", userID, storage.getListFriends(userID));
+            log.info("Добавление в друзья пользователя с id = {} пользователю с id = {} успешно завершено",
+                    newFriendID,
+                    userID);
+            log.info("Список друзей пользователя {} : {}", userID, storage.getListFriends(userID));
             return Optional.of(storage.getUserById(newFriendID).getUserDto());
         }
         return Optional.empty();
     }
 
     public void deleteFriend(final int friendID, final int userID) {
+        log.info("В классе {} запущен метод по удалению из друзей пользователя с id = {} у пользователя с id = {}",
+                UserService.class.getName(),
+                friendID,
+                userID);
         if (storage.getUserById(friendID) == null || storage.getUserById(userID) == null) {
             throw new NotFoundUserException();
         }
         storage.deleteFriend(userID, friendID);
+        log.info("Удаление из друзей пользователя с id = {} у пользователя с id = {} успешно завершено",
+                friendID,
+                userID);
     }
 
     public Optional<List<UserDto>> getFriendsUser(final int userID) {
-        log.debug("запрос на получение списка друзей пользователя {}", userID);
+        log.info("В классе {} запущен метод на получение списка друзей пользователя с id = {}",
+                UserService.class.getName(),
+                userID);
         ResponseUser response = storage.getUserById(userID);
         if (response == null) {
             throw new NotFoundUserException();
@@ -80,6 +103,11 @@ public class UserService {
     }
 
     public Optional<List<UserDto>> getCommonFriends(final int friendID, final int userID) {
+        log.info("В классе {} запущен метод на получение списка общих друзей пользователя с id = {} с пользователем" +
+                        "с id = {}",
+                UserService.class.getName(),
+                friendID,
+                userID);
         final List<Integer> friendListUserOne = storage.getListFriends(friendID);
         final List<Integer> friendListUserTwo = storage.getListFriends(userID);
         return Optional.of(friendListUserOne.stream()

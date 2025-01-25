@@ -23,6 +23,7 @@ public class RequestCreateFilm {
     private List<ID> genres;
 
     public FilmDto getFilmDto() {
+        log.info("В классе {} вызван метод по получению представления FilmDto", RequestCreateFilm.class.getName());
         return FilmDto.builder()
                 .name(name)
                 .description(description)

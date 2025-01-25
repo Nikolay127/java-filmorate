@@ -24,10 +24,12 @@ public class RequestUpdateFilm {
     private ID mpa;
 
     public FilmDto getFilmDto() {
+        log.info("В классе {} вызван метод по получению представления FilmDto", RequestUpdateFilm.class.getName());
         return FilmDto.builder().name(name).description(description).duration(duration).releaseDate(releaseDate).build();
     }
 
     public RequestCreateFilm getRequestFilm() {
+        log.info("В классе {} вызван метод getRequestFilm()", RequestUpdateFilm.class.getName());
         RequestCreateFilm requestFilm = new RequestCreateFilm();
         requestFilm.setId(id);
         requestFilm.setName(name);

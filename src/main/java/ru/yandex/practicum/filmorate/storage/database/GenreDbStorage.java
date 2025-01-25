@@ -21,6 +21,10 @@ public class GenreDbStorage {
     private final GenreRowMapper mapper;
 
     public void addGenreToFilm(final int filmId, final int genreId) {
+        log.info("В классе {} запущен метод по указанию жанра с id = {} фильму с id = {}",
+                GenreDbStorage.class.getName(),
+                genreId,
+                filmId);
         SqlParameterSource namedParameters = new MapSqlParameterSource()
                 .addValue("filmID", filmId).addValue("genreID", genreId);
         String sqlQuery = "INSERT INTO genres_films (film_Id, genre_id) VALUES (:filmID,:genreID)";
@@ -28,18 +32,20 @@ public class GenreDbStorage {
             try {
                 jdbc.update(sqlQuery, namedParameters);
             } catch (DataAccessException e) {
-                log.debug("ошибка при добавлении жанра: {}", e.getMessage());
+                log.debug("Ошибка при добавлении жанра: {}", e.getMessage());
                 throw new RuntimeException(e);
             }
         }
     }
 
     public List<Genre> getGenres() {
+        log.info("В классе {} запущен метод по получению списка всех жанров", GenreDbStorage.class.getName());
         String sqlQuery = "SELECT genre_id, title FROM genres;";
         return jdbc.query(sqlQuery, mapper);
     }
 
     public Genre getGenre(final int genreId) {
+        log.info("В классе {} запущен метод по получению жанра с id = {}", GenreDbStorage.class.getName(), genreId);
         SqlParameterSource namedParameters = new MapSqlParameterSource()
                 .addValue("genreID", genreId);
         String sqlQuery = "SELECT genre_id, title FROM genres WHERE genre_id = :genreID";
@@ -47,12 +53,15 @@ public class GenreDbStorage {
         try {
             genre = jdbc.queryForObject(sqlQuery, namedParameters, mapper);
         } catch (DataAccessException e) {
-            log.debug("ошибка при поиске жанра по id: {}", e.getMessage());
+            log.debug("Ошибка при поиске жанра по id: {}", e.getMessage());
         }
         return genre;
     }
 
     public List<Genre> getGenreFilm(final int filmId) {
+        log.info("В классе {} запущен метод по получению жанров для фильма с id = {}",
+                GenreDbStorage.class.getName(),
+                filmId);
         SqlParameterSource namedParameters = new MapSqlParameterSource()
                 .addValue("filmID", filmId);
         String sqlQuery = "SELECT genre_id FROM genres_films WHERE film_id = :filmID";

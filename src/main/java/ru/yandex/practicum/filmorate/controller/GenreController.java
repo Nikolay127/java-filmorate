@@ -18,11 +18,15 @@ public class GenreController {
 
     @GetMapping("/{genreId}")
     public Optional<Genre> getGenre(@PathVariable("genreId") String id) {
+        log.info("В контроллере {} вызван метод по получению жанра с id = {}",
+                GenreController.class.getName(),
+                id);
         return service.getGenreById(Integer.parseInt(id));
     }
 
     @GetMapping
     public Optional<List<Genre>> getAllGenre() {
+        log.info("В контроллере {} вызван метод по получению всех жанров", GenreController.class.getName());
         return service.getGenres();
     }
 }

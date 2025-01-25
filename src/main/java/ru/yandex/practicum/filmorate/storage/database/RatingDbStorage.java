@@ -22,6 +22,10 @@ public class RatingDbStorage {
     private final MpaRowMapper mapper;
 
     public void addMpa(final int filmId, final int ratingId) {
+        log.info("В классе {} запущен метод по указанию рейтинга с id = {} фильму с id = {}",
+                RatingDbStorage.class.getName(),
+                ratingId,
+                filmId);
         SqlParameterSource namedParameters = new MapSqlParameterSource()
                 .addValue("filmID", filmId).addValue("ratingID", ratingId);
         String sqlQuery = "INSERT INTO ratings_films (film_Id, rating_id) VALUES (:filmID,:ratingID)";
@@ -32,16 +36,18 @@ public class RatingDbStorage {
                 throw new ErrorAddingData("рейтинг не был добавлен");
             }
         } catch (DataAccessException e) {
-            log.debug("ошибка при добавлении рейтинга: {}", e.getMessage());
+            log.debug("Ошибка при добавлении рейтинга: {}", e.getMessage());
         }
     }
 
     public List<Mpa> getAllMpa() {
+        log.info("В классе {} запущен метод по получению списка всех рейтингов", RatingDbStorage.class.getName());
         String sqlQuery = "SELECT rating_id, title FROM ratings;";
         return jdbc.query(sqlQuery, mapper);
     }
 
     public Mpa getMpa(int ratingId) {
+        log.info("В классе {} запущен метод по получению рейтинга с id = {}", RatingDbStorage.class.getName(), ratingId);
         SqlParameterSource namedParameters = new MapSqlParameterSource()
                 .addValue("ratingID", ratingId);
         String sqlQuery = "SELECT rating_id, title FROM ratings WHERE rating_id = :ratingID";
@@ -53,6 +59,9 @@ public class RatingDbStorage {
     }
 
     public Mpa getMpaFilm(int filmId) throws NotFoundRating {
+        log.info("В классе {} запущен метод по получению рейтинга для фильма с id = {}",
+                RatingDbStorage.class.getName(),
+                filmId);
         SqlParameterSource namedParameters = new MapSqlParameterSource()
                 .addValue("filmID", filmId);
         String sqlQuery = "SELECT rating_id FROM ratings_films WHERE film_id = :filmID";

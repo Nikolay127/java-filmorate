@@ -33,6 +33,7 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public ResponseUser createUser(RequestUser request) {
+        log.info("В классе {} запущен метод по созданию пользователя {}", UserDbStorage.class.getName(), request);
         SqlParameterSource[] batch = SqlParameterSourceUtils.createBatch(request.getUserDto());
         String sqlQuery = "INSERT INTO users (email,login,name,birthday) VALUES (:email,:login,:name,:birthday)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
@@ -51,6 +52,7 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public ResponseUser updateUser(RequestUser request) {
+        log.info("В классе {} запущен метод по обновлению пользователя {}", UserDbStorage.class.getName(), request);
         SqlParameterSource[] batch = SqlParameterSourceUtils.createBatch(request.getUserDto());
         String sqlQuery = "UPDATE users " +
                 "SET email = :email, login = :login, name = :name, birthday = :birthday " +
@@ -70,6 +72,7 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public void deleteUser(int userId) {
+        log.info("В классе {} запущен метод по удалению пользователя с id = {}", UserDbStorage.class.getName(), userId);
         SqlParameterSource namedParameters = new MapSqlParameterSource().addValue("userID", userId);
         String sqlQuery = "DELETE FROM users WHERE user_id = :userID";
         jdbc.update(sqlQuery, namedParameters);
@@ -77,6 +80,7 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public ResponseUser getUserById(int userID) {
+        log.info("В классе {} запущен метод по получению пользователя с id = {}", UserDbStorage.class.getName(), userID);
         SqlParameterSource namedParameters = new MapSqlParameterSource().addValue("userID", userID);
         String sqlQuery = "SELECT * FROM users WHERE user_id = :userID";
         try {
@@ -88,12 +92,17 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public List<ResponseUser> getAllUsers() {
+        log.info("В классе {} запущен метод по получению списка всех пользователей", UserDbStorage.class.getName());
         String sqlQuery = "SELECT * FROM users;";
         return jdbc.query(sqlQuery, mapper);
     }
 
     @Override
     public void addFriend(int userID, int friendID) {
+        log.info("В классе {} запущен метод по добавлению в друзья пользователя с id = {} пользователю с id = {}",
+                UserDbStorage.class.getName(),
+                friendID,
+                userID);
         SqlParameterSource namedParameters = new MapSqlParameterSource()
                 .addValue("userID", userID).addValue("friendID", friendID);
         String sqlQuery = "INSERT INTO friends (user_id,friend_id) VALUES (:userID,:friendID);";
@@ -106,6 +115,10 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public void deleteFriend(int userID, int friendID) {
+        log.info("В классе {} запущен метод по удалению из друзей пользователя с id = {} у пользователя с id = {}",
+                UserDbStorage.class.getName(),
+                friendID,
+                userID);
         SqlParameterSource namedParameters = new MapSqlParameterSource()
                 .addValue("userID", userID).addValue("friendID", friendID);
         String sqlQuery = "DELETE FROM friends WHERE user_id = :userID AND :friendID";
@@ -118,6 +131,9 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public List<Integer> getListFriends(Integer userid) {
+        log.info("В классе {} запущен метод получения списка друзей у пользователя с id = {}",
+                UserDbStorage.class.getName(),
+                userid);
         SqlParameterSource namedParameters = new MapSqlParameterSource()
                 .addValue("userID", userid);
         String sklQuery = "SELECT friend_id FROM friends WHERE user_id = :userID";

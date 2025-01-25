@@ -41,6 +41,7 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public ResponseFilm createFilm(RequestCreateFilm request) {
+        log.info("В классе {} запущен метод по созданию фильма {}", FilmDbStorage.class.getName(), request);
         SqlParameterSource[] batch = SqlParameterSourceUtils.createBatch(request.getFilmDto());
         String sqlQuery = "INSERT INTO films (name,description,releaseDate,duration) VALUES (:name,:description,:releaseDate,:duration);";
         Integer filmId;
@@ -50,15 +51,15 @@ public class FilmDbStorage implements FilmStorage {
             result = jdbc.batchUpdate(sqlQuery, batch, keyHolder);
             filmId = Objects.requireNonNull(keyHolder.getKey()).intValue();
             if (result.length == 0) {
-                throw new ErrorAddingData("данные не были добавлены");
+                throw new ErrorAddingData("Данные не были добавлены");
             }
         } catch (DataAccessException e) {
-            log.debug("ошибка при добавлении фильма: {}", e.getMessage());
+            log.debug("Ошибка при добавлении фильма: {}", e.getMessage());
             throw new ErrorAddingData(e.getMessage());
         }
         if (Objects.nonNull(request.getMpa())) {
             if (Objects.isNull(ratingDbStorage.getMpa(request.getMpa().getId()))) {
-                throw new IncorrectMpaID("неверный id mpa");
+                throw new IncorrectMpaID("Неверный id mpa");
             }
             ratingDbStorage.addMpa(filmId, request.getMpa().getId());
         }
@@ -66,7 +67,7 @@ public class FilmDbStorage implements FilmStorage {
         if (Objects.nonNull(genres)) {
             for (ID id : genres) {
                 if (Objects.isNull(genreDbStorage.getGenre(id.getId()))) {
-                    throw new IncorrectGenreID("неверный id жанра");
+                    throw new IncorrectGenreID("Неверный id жанра");
                 }
                 genreDbStorage.addGenreToFilm(filmId, id.getId());
             }
@@ -76,6 +77,7 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public ResponseFilm updateFilm(RequestCreateFilm request) {
+        log.info("В классе {} запущен метод по обновлению фильма {}", FilmDbStorage.class.getName(), request);
         SqlParameterSource[] batch = SqlParameterSourceUtils.createBatch(request.getFilmDto());
         String sqlQuery = "UPDATE films " +
                 "SET name = :name, description = :description, releaseDate = :releaseDate, duration = :duration " +
@@ -89,8 +91,8 @@ public class FilmDbStorage implements FilmStorage {
         }
 
         if (result.length == 0) {
-            log.debug("ошибка при обновлении фильма");
-            throw new ErrorAddingData("данные не были обновлены");
+            log.debug("Ошибка при обновлении фильма");
+            throw new ErrorAddingData("Данные не были обновлены");
         }
         return getFilmById(request.getId());
     }
@@ -103,7 +105,7 @@ public class FilmDbStorage implements FilmStorage {
         try {
             jdbc.update(sqlQuery, namedParameters);
         } catch (DataAccessException e) {
-            log.debug("ошибка при добавлении лайка: {}", e.getMessage());
+            log.debug("Ошибка при добавлении лайка: {}", e.getMessage());
             throw new RuntimeException(e);
         }
     }
@@ -116,33 +118,35 @@ public class FilmDbStorage implements FilmStorage {
         try {
             jdbc.update(sqlQuery, namedParameters);
         } catch (DataAccessException e) {
-            log.debug("ошибка при удалении лайка: {}", e.getMessage());
+            log.debug("Ошибка при удалении лайка: {}", e.getMessage());
             throw new RuntimeException(e);
         }
     }
 
     @Override
     public void deleteFilm(int filmID) {
+        log.info("В классе {} запущен метод по удалению фильма с id = {}", FilmDbStorage.class.getName(), filmID);
         SqlParameterSource namedParameters = new MapSqlParameterSource()
                 .addValue("filmID", filmID);
         String sqlQuery = "DELETE FROM films WHERE film_id = :filmID";
         try {
             jdbc.update(sqlQuery, namedParameters);
         } catch (DataAccessException e) {
-            log.debug("ошибка при удалении фильма: {}", e.getMessage());
+            log.debug("Ошибка при удалении фильма: {}", e.getMessage());
             throw new RuntimeException(e);
         }
     }
 
     @Override
     public ResponseFilm getFilmById(int filmID) {
+        log.info("В классе {} запущен метод по получению фильма с id = {}", FilmDbStorage.class.getName(), filmID);
         SqlParameterSource namedParameters = new MapSqlParameterSource().addValue("id", filmID);
         String sqlQuery = "SELECT * FROM films WHERE film_id = :id;";
         ResponseFilm responseFilm;
         try {
             responseFilm = jdbc.queryForObject(sqlQuery, namedParameters, responseMapper);
         } catch (DataAccessException e) {
-            log.debug("ошибка при получении фильма из БД: {}", e.getMessage());
+            log.debug("Ошибка при получении фильма из БД: {}", e.getMessage());
             throw new RuntimeException(e);
         }
         assert Objects.nonNull(responseFilm);
@@ -155,6 +159,9 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public List<Integer> getLikesFilm(int filmID) {
+        log.info("В классе {} запущен метод по получению лайков для фильма с id = {}",
+                FilmDbStorage.class.getName(),
+                filmID);
         SqlParameterSource namedParameters = new MapSqlParameterSource()
                 .addValue("filmID", filmID);
         String sqlQuery = "SELECT film_id, user_id FROM likes WHERE film_id = :filmID";
@@ -162,7 +169,7 @@ public class FilmDbStorage implements FilmStorage {
         try {
             likes = jdbc.query(sqlQuery, namedParameters, likesMapper);
         } catch (DataAccessException e) {
-            log.debug("ошибка при получении списка лайков из БД: {}", e.getMessage());
+            log.debug("Ошибка при получении списка лайков из БД: {}", e.getMessage());
             throw new RuntimeException(e);
         }
         return likes;
@@ -170,6 +177,7 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public List<FilmDto> getAllFilms() {
+        log.info("В классе {} запущен метод по получению списка всех фильмов", FilmDbStorage.class.getName());
         String sqlQuery = "SELECT film_id,name,description,releaseDate,duration FROM films;";
         try {
             return jdbc.query(sqlQuery, responseMapper).stream()
@@ -177,7 +185,7 @@ public class FilmDbStorage implements FilmStorage {
                     .peek(responseFilm -> responseFilm.setGenres(genreDbStorage.getGenreFilm(responseFilm.getId())))
                     .map(ResponseFilm::getFilmDto).toList();
         } catch (DataAccessException e) {
-            log.debug("ошибка при формировании списка фильмов из БД: {}", e.getMessage());
+            log.debug("Ошибка при формировании списка фильмов из БД: {}", e.getMessage());
             throw new RuntimeException(e);
         }
     }

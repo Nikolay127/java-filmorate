@@ -51,6 +51,7 @@ public class UserController {
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.OK)
     public void deleteUser(@PathVariable int id) {
+        log.info("В контроллере {} запущен метод для удаления пользователя", UserController.class.getName());
         userService.deleteUser(id);
     }
 
