@@ -34,7 +34,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Import({UserService.class, UserDbStorage.class, ResponseUserRowMapper.class, FriendsRowMapper.class,
         FilmService.class, FilmDbStorage.class, ResponseFilmRowMapper.class, GenreDbStorage.class, GenreRowMapper.class,
         RatingDbStorage.class, MpaRowMapper.class, LikesRowMapper.class, IDRowMapper.class, GenreService.class, MpaService.class})
-class FilmorateApplicationTests {
+public class FilmorateApplicationTests {
     private final UserService userService;
     private final FilmService filmService;
     private final GenreService genreService;
