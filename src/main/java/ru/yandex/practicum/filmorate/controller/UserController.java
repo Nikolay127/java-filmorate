@@ -5,11 +5,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.model.RequestUser;
+import ru.yandex.practicum.filmorate.model.dto.UserDto;
 import ru.yandex.practicum.filmorate.service.UserService;
 
-import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/users")
@@ -25,53 +28,60 @@ public class UserController {
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public Collection<User> getUsers() {
+    public Optional<List<UserDto>> getUsers() {
         log.info("В контроллере {} запущен метод получения всех пользователей", UserController.class.getName());
         return userService.getAllUsers();
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public User createUser(@Valid @RequestBody User user) {
+    public ResponseEntity<Optional<UserDto>> createUser(@Valid @RequestBody RequestUser user) {
         log.info("В контроллере {} запущен метод для создания пользователя", UserController.class.getName());
-        return userService.createUser(user);
+        return ResponseEntity.ok(userService.createUser(user));
 
     }
 
     @PutMapping
     @ResponseStatus(HttpStatus.OK)
-    public User updateUser(@Valid @RequestBody User user) {
+    public ResponseEntity<Optional<UserDto>> updateUser(@Valid @RequestBody RequestUser user) {
         log.info("В контроллере {} запущен метод для обновления пользователя", UserController.class.getName());
-        return userService.updateUser(user);
+        return ResponseEntity.ok(userService.updateUser(user));
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public void deleteUser(@PathVariable int id) {
+        userService.deleteUser(id);
     }
 
     @PutMapping("/{id}/friends/{friendId}")
     @ResponseStatus(HttpStatus.OK)
-    public User addToFriends(@PathVariable Long id, @PathVariable Long friendId) {
+    public ResponseEntity<UserDto> addToFriends(@PathVariable int id, @PathVariable int friendId) {
         log.info("В контроллере {} запущен метод для обоюдного добавления в друзьям", UserController.class.getName());
-        return userService.addToFriends(id, friendId);
+        Optional<UserDto> newFriend = userService.addFriend(friendId, id);
+        return newFriend.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.badRequest().build());
     }
 
     @DeleteMapping("/{id}/friends/{friendId}")
     @ResponseStatus(HttpStatus.OK)
-    public User removeFromFriends(@PathVariable Long id, @PathVariable Long friendId) {
+    public void removeFromFriends(@PathVariable int id, @PathVariable int friendId) {
         log.info("В контроллере {} запущен метод для обоюдного удаления из друзей", UserController.class.getName());
-        return userService.removeFromFriends(id, friendId);
+        userService.deleteFriend(friendId, id);
     }
 
     @GetMapping("/{id}/friends")
     @ResponseStatus(HttpStatus.OK)
-    public Collection<User> getAllFriends(@PathVariable Long id) {
+    public Optional<List<UserDto>> getAllFriends(@PathVariable int id) {
         log.info("В контроллере {} запущен метод для получения списка всех друзей у пользователя",
                 UserController.class.getName());
-        return userService.getAllFriends(id);
+        return userService.getFriendsUser(id);
     }
 
     @GetMapping("/{id}/friends/common/{otherId}")
     @ResponseStatus(HttpStatus.OK)
-    public Collection<User> getAllCommonFriends(@PathVariable Long id, @PathVariable Long otherId) {
+    public ResponseEntity<Optional<List<UserDto>>> getAllCommonFriends(@PathVariable int id, @PathVariable int otherId) {
         log.info("В контроллере {} запущен метод для получения списка общих друзей у двух пользователей",
                 UserController.class.getName());
-        return userService.getAllCommonFriends(id, otherId);
+        return ResponseEntity.ok(userService.getCommonFriends(id, otherId));
     }
 }

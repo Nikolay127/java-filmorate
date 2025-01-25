@@ -1,107 +1,109 @@
 package ru.yandex.practicum.filmorate.service;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
-import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
-import ru.yandex.practicum.filmorate.storage.user.UserStorage;
+import ru.yandex.practicum.filmorate.exceptions.NotFoundUserException;
+import ru.yandex.practicum.filmorate.exceptions.NotValidParamException;
+import ru.yandex.practicum.filmorate.model.ID;
+import ru.yandex.practicum.filmorate.model.RequestCreateFilm;
+import ru.yandex.practicum.filmorate.model.RequestUpdateFilm;
+import ru.yandex.practicum.filmorate.model.dto.FilmDto;
+import ru.yandex.practicum.filmorate.storage.FilmStorage;
+import ru.yandex.practicum.filmorate.storage.UserStorage;
+import ru.yandex.practicum.filmorate.storage.database.GenreDbStorage;
+import ru.yandex.practicum.filmorate.storage.database.RatingDbStorage;
+import ru.yandex.practicum.filmorate.storage.database.response.ResponseFilm;
 
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
+@Slf4j
 @Service
+@RequiredArgsConstructor
 public class FilmService {
-
-    private static final Logger log = LoggerFactory.getLogger(FilmService.class);
-    private final FilmStorage filmStorage;
+    @Qualifier("filmDbStorage")
+    private final FilmStorage storage;
+    @Qualifier("userDbStorage")
     private final UserStorage userStorage;
+    private final GenreDbStorage genreStorage;
+    private final RatingDbStorage ratingStorage;
 
-    @Autowired
-    public FilmService(FilmStorage filmStorage, UserStorage userStorage) {
-        this.filmStorage = filmStorage;
-        this.userStorage = userStorage;
-    }
-
-    public Collection<Film> getAllFilms() {
-        log.info("В сервисе {} вызван метод по получению списка всех фильмов", FilmService.class.getName());
-        return filmStorage.getAllFilms();
-    }
-
-    public Film createFilm(Film film) {
-        log.info("В сервисе {} вызван метод по созданию фильма", FilmService.class.getName());
-        validateDataReleaseAndName(film);
-        log.info("У фильма {} успешно пройдена валидация даты релиза и названия", film);
-        log.info("Вызывается метод по созданию фильма {}", film);
-        return filmStorage.createFilm(film);
-    }
-
-    public Film updateFilm(Film film) {
-        log.info("В сервисе {} вызван метод по обновлению фильма", FilmService.class.getName());
-        validateDataReleaseAndName(film);
-        log.info("У обновляемого фильма {} успешно пройдена валидация даты релиза и названия", film);
-        log.info("Вызывается метод по обновлению фильма {}", film);
-        return filmStorage.updateFilm(film);
-    }
-
-    public Film addLike(Long filmId, Long userId) {
-        log.info("Вызван метод проставления лайка фильму с id {} от пользователя с id {}", filmId, userId);
-        if (!isFilmExist(filmId)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Запрашиваемого фильма нет");
+    public Optional<FilmDto> createFilm(RequestCreateFilm requestFilm) {
+        Validate.validateFilm(requestFilm.getFilmDto());
+        if (requestFilm.getGenres() != null) {
+            Validate.validateGenre(genreStorage.getGenres(), requestFilm.getGenres());
         }
-        if (!isUserExist(userId)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Запрашиваемого пользователя нет");
+        if (requestFilm.getMpa() != null) {
+            List<ID> mpaList = new ArrayList<>();
+            mpaList.add(requestFilm.getMpa());
+            Validate.validateMpa(ratingStorage.getAllMpa(), mpaList);
         }
-        filmStorage.getFilm(filmId).addLike(userId);
-//        filmStorage.getFilm(filmId).getLikes().add(userId);
-        log.info("Поставлен лайка фильму с id {} от пользователя с id {}", filmId, userId);
-        return filmStorage.getFilm(filmId);
+        ResponseFilm response = storage.createFilm(requestFilm);
+        return Optional.ofNullable(response.getFilmDto());
     }
 
-    public Film deleteLike(Long filmId, Long userId) {
-        log.info("Вызван метод удаления лайка с фильма с id {} от пользователя с id {}", filmId, userId);
-        if (!isFilmExist(filmId)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Запрашиваемого фильма нет");
+    public Optional<FilmDto> getFilmById(int id) {
+        return Optional.ofNullable(storage.getFilmById(id).getFilmDto());
+    }
+
+    public Optional<FilmDto> updateFilm(RequestUpdateFilm request) {
+        Validate.validateFilm(request.getFilmDto());
+        ResponseFilm response = storage.updateFilm(request.getRequestFilm());
+        return Optional.ofNullable(response.getFilmDto());
+    }
+
+    public void deleteFilm(final int filmID) {
+        storage.deleteFilm(filmID);
+    }
+
+    public void addLike(final int filmID, final int userID) {
+        if (userStorage.getUserById(userID) == null) {
+            throw new NotFoundUserException();
         }
-        if (!isUserExist(userId)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Запрашиваемого пользователя нет");
-        }
-        filmStorage.getFilm(filmId).removeLike(userId);
-//        filmStorage.getFilm(filmId).getLikes().remove(userId);
-        log.info("Удален лайк фильму с id {} от пользователя с id {}", filmId, userId);
-        return filmStorage.getFilm(filmId);
-    }
-
-    public Collection<Film> getPopularFilms(Long id) {
-        log.info("Вызван метод получения самых популярных фильмов");
-        List<Film> allFilms = new ArrayList<>(filmStorage.getAllFilms());
-        // Сортируем фильмы по количеству лайков в порядке убывания
-        allFilms.sort((film1, film2) -> Long.compare(film2.getRate(), film1.getRate()));
-        // Ограничиваем количество фильмов до указанного числа
-        List<Film> popularFilms = allFilms.subList(0, Math.min(id.intValue(), allFilms.size()));
-        log.info("Сформирован список популярных фильмов: {}", popularFilms);
-        return popularFilms;
-    }
-
-    private boolean isFilmExist(Long filmId) {
-        return filmStorage.getAllFilms().contains(filmStorage.getFilm(filmId));
-    }
-
-    private boolean isUserExist(Long userId) {
-        return userStorage.getAllUsers().contains(userStorage.getUser(userId));
-    }
-
-    private void validateDataReleaseAndName(Film film) {
-        if (film.getReleaseDate().isBefore(LocalDate.of(1895, 12, 28))) {
-            log.error("Фильм {} не создан, по причине неверной даты релиза", film);
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Дата релиза — не раньше 28 декабря 1895 года");
-        } else if (film.getName().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Название фильма не может быть пустым");
+        if (!storage.getLikesFilm(filmID).contains(userID)) {
+            storage.addLike(filmID, userID);
         }
     }
+
+    public void deleteLike(final int filmID, final int userID) {
+        if (!storage.getLikesFilm(filmID).contains(userID)) {
+            throw new NotFoundUserException();
+        }
+        storage.deleteLike(filmID, userID);
+    }
+
+    public Optional<List<FilmDto>> getAllFilms() {
+        return Optional.ofNullable(storage.getAllFilms());
+    }
+
+    public Optional<List<FilmDto>> getPopularFilms(String countStr) {
+        int count;
+        try {
+            count = Integer.parseInt(countStr);
+        } catch (NumberFormatException e) {
+            throw new NotValidParamException(e.getMessage());
+        }
+
+        Map<Integer, List<Integer>> likes = storage.getLikesFilms();
+        TreeSet<Integer> sortedFilms = new TreeSet<>(new Comparator<>() {
+            int likes1;
+            int likes2;
+
+            @Override
+            public int compare(Integer filmOne, Integer filmTwo) {
+                likes1 = likes.get(filmOne).size();
+                likes2 = likes.get(filmTwo).size();
+                return likes2 - likes1;
+            }
+        });
+        sortedFilms.addAll(likes.keySet());
+
+        return Optional.of(sortedFilms.stream().limit(count)
+                .map(storage::getFilmById)
+                .map(ResponseFilm::getFilmDto)
+                .toList());
+
+    }
+
 }
