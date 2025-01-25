@@ -204,4 +204,40 @@ public class FilmDbStorage implements FilmStorage {
         }
         return response;
     }
+
+    @Override
+    public List<FilmDto> getPopularFilms(int count) {
+        log.info("В классе {} вызван метод получения популярных фильмов, лимит: {}", FilmDbStorage.class.getName(), count);
+        String sqlQuery = """
+        SELECT f.film_id, f.name, f.description, f.releaseDate, f.duration
+        FROM films f
+        LEFT JOIN (
+            SELECT film_id, COUNT(user_id) AS like_count
+            FROM likes
+            GROUP BY film_id
+        ) l ON f.film_id = l.film_id
+        ORDER BY COALESCE(l.like_count, 0) DESC
+        LIMIT :count
+    """;
+        SqlParameterSource namedParameters = new MapSqlParameterSource()
+                .addValue("count", count);
+        return jdbc.query(sqlQuery, namedParameters, (rs, rowNum) -> FilmDto.builder()
+                .id(rs.getInt("film_id"))
+                .name(rs.getString("name"))
+                .description(rs.getString("description"))
+                .releaseDate(rs.getDate("releaseDate").toLocalDate())
+                .duration(rs.getInt("duration"))
+                .build());
+    }
+
+    @Override
+    public boolean hasLike(int filmID, int userID) {
+        log.info("В классе {} запущен метод проверки лайка пользователя {} для фильма {}", FilmDbStorage.class.getName(), userID, filmID);
+        SqlParameterSource namedParameters = new MapSqlParameterSource()
+                .addValue("filmID", filmID)
+                .addValue("userID", userID);
+        String sqlQuery = "SELECT COUNT(*) FROM likes WHERE film_id = :filmID AND user_id = :userID";
+        Integer count = jdbc.queryForObject(sqlQuery, namedParameters, Integer.class);
+        return count != null && count > 0;
+    }
 }

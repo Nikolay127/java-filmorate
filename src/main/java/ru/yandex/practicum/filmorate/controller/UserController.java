@@ -29,14 +29,14 @@ public class UserController {
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
     public Optional<List<UserDto>> getUsers() {
-        log.info("В контроллере {} запущен метод получения всех пользователей", UserController.class.getName());
+        log.debug("В контроллере {} запущен метод получения всех пользователей", UserController.class.getName());
         return userService.getAllUsers();
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<Optional<UserDto>> createUser(@Valid @RequestBody RequestUser user) {
-        log.info("В контроллере {} запущен метод для создания пользователя", UserController.class.getName());
+        log.debug("В контроллере {} запущен метод для создания пользователя", UserController.class.getName());
         return ResponseEntity.ok(userService.createUser(user));
 
     }
@@ -44,21 +44,21 @@ public class UserController {
     @PutMapping
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<Optional<UserDto>> updateUser(@Valid @RequestBody RequestUser user) {
-        log.info("В контроллере {} запущен метод для обновления пользователя", UserController.class.getName());
+        log.debug("В контроллере {} запущен метод для обновления пользователя", UserController.class.getName());
         return ResponseEntity.ok(userService.updateUser(user));
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.OK)
     public void deleteUser(@PathVariable int id) {
-        log.info("В контроллере {} запущен метод для удаления пользователя", UserController.class.getName());
+        log.debug("В контроллере {} запущен метод для удаления пользователя", UserController.class.getName());
         userService.deleteUser(id);
     }
 
     @PutMapping("/{id}/friends/{friendId}")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<UserDto> addToFriends(@PathVariable int id, @PathVariable int friendId) {
-        log.info("В контроллере {} запущен метод для обоюдного добавления в друзьям", UserController.class.getName());
+        log.debug("В контроллере {} запущен метод для обоюдного добавления в друзьям", UserController.class.getName());
         Optional<UserDto> newFriend = userService.addFriend(friendId, id);
         return newFriend.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.badRequest().build());
     }
@@ -66,14 +66,14 @@ public class UserController {
     @DeleteMapping("/{id}/friends/{friendId}")
     @ResponseStatus(HttpStatus.OK)
     public void removeFromFriends(@PathVariable int id, @PathVariable int friendId) {
-        log.info("В контроллере {} запущен метод для обоюдного удаления из друзей", UserController.class.getName());
+        log.debug("В контроллере {} запущен метод для обоюдного удаления из друзей", UserController.class.getName());
         userService.deleteFriend(friendId, id);
     }
 
     @GetMapping("/{id}/friends")
     @ResponseStatus(HttpStatus.OK)
     public Optional<List<UserDto>> getAllFriends(@PathVariable int id) {
-        log.info("В контроллере {} запущен метод для получения списка всех друзей у пользователя",
+        log.debug("В контроллере {} запущен метод для получения списка всех друзей у пользователя",
                 UserController.class.getName());
         return userService.getFriendsUser(id);
     }
@@ -81,7 +81,7 @@ public class UserController {
     @GetMapping("/{id}/friends/common/{otherId}")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<Optional<List<UserDto>>> getAllCommonFriends(@PathVariable int id, @PathVariable int otherId) {
-        log.info("В контроллере {} запущен метод для получения списка общих друзей у двух пользователей",
+        log.debug("В контроллере {} запущен метод для получения списка общих друзей у двух пользователей",
                 UserController.class.getName());
         return ResponseEntity.ok(userService.getCommonFriends(id, otherId));
     }

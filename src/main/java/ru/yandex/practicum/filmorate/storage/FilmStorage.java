@@ -25,4 +25,8 @@ public interface FilmStorage {
     List<FilmDto> getAllFilms();
 
     Map<Integer, List<Integer>> getLikesFilms();
+
+    boolean hasLike(int filmID, int userID);
+
+    List<FilmDto> getPopularFilms(int count);
 }

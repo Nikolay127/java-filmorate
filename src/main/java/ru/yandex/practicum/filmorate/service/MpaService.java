@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.exceptions.NotFoundRating;
 import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.storage.database.RatingDbStorage;
 
@@ -18,7 +19,10 @@ public class MpaService {
     public Optional<Mpa> getMpaById(int id) {
         log.info("В классе {} запущен метод по получению рейтинга с id = {}", MpaService.class.getName(), id);
         Mpa mpa = storage.getMpa(id);
-        Validate.validateMpa(mpa);
+        Optional<String> validationError = Validate.validateMpa(mpa);
+        if (validationError.isPresent()) {
+            throw new NotFoundRating(validationError.get());
+        }
         return Optional.of(mpa);
     }
 

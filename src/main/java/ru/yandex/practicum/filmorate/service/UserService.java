@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exceptions.NotFoundUserException;
+import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.RequestUser;
 import ru.yandex.practicum.filmorate.model.dto.UserDto;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
@@ -22,7 +23,10 @@ public class UserService {
 
     public Optional<UserDto> createUser(RequestUser request) {
         log.info("В классе {} запущен метод по созданию пользователя", UserService.class.getName());
-        Validate.validateUser(request.getUserDto());
+        Optional<String> validationError = Validate.validateUser(request.getUserDto());
+        if (validationError.isPresent()) {
+            throw new ValidationException(validationError.get());
+        }
         UserDto newUser = storage.createUser(request).getUserDto();
         log.info("Добавлен новый пользователь, id пользователя: {}", newUser.getId());
         return Optional.of(newUser);
@@ -38,9 +42,12 @@ public class UserService {
         log.info("В классе {} запущен метод по обновлению пользователя с id = {}",
                 UserService.class.getName(),
                 request.getId());
-        Validate.validateUser(request.getUserDto());
+        Optional<String> validationError = Validate.validateUser(request.getUserDto());
+        if (validationError.isPresent()) {
+            throw new ValidationException(validationError.get());
+        }
         log.info("Пользователь с id = {} успешно прошел валидацию", request.getId());
-        if (storage.getUserById(request.getId()) == null) {
+        if (!storage.existsById(request.getId())) {
             throw new NotFoundUserException();
         }
         ResponseUser response = storage.updateUser(request);
@@ -63,7 +70,7 @@ public class UserService {
                 UserService.class.getName(),
                 newFriendID,
                 userID);
-        if (!storage.getListFriends(userID).contains(newFriendID)) {
+        if (!storage.existsFriend(userID, newFriendID)) {
             storage.addFriend(userID, newFriendID);
             log.info("Добавление в друзья пользователя с id = {} пользователю с id = {} успешно завершено",
                     newFriendID,
@@ -79,7 +86,7 @@ public class UserService {
                 UserService.class.getName(),
                 friendID,
                 userID);
-        if (storage.getUserById(friendID) == null || storage.getUserById(userID) == null) {
+        if (!storage.existsById(friendID) || !storage.existsById(userID)) {
             throw new NotFoundUserException();
         }
         storage.deleteFriend(userID, friendID);

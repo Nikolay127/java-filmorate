@@ -21,7 +21,7 @@ public class MpaController {
 
     @GetMapping("/{mpaId}")
     public Optional<Mpa> getMpa(@PathVariable("mpaId") String id) {
-        log.info("В контроллере {} вызван метод по получению рейтинга с id = {}",
+        log.debug("В контроллере {} вызван метод по получению рейтинга с id = {}",
                 MpaController.class.getName(),
                 id);
         return service.getMpaById(Integer.parseInt(id));
@@ -29,7 +29,7 @@ public class MpaController {
 
     @GetMapping
     public Optional<List<Mpa>> getAllMpa() {
-        log.info("В контроллере {} вызван метод по получению всех рейтингов", MpaController.class.getName());
+        log.debug("В контроллере {} вызван метод по получению всех рейтингов", MpaController.class.getName());
         return service.getAllMpa();
     }
 }

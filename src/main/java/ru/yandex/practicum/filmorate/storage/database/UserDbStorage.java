@@ -139,4 +139,26 @@ public class UserDbStorage implements UserStorage {
         String sklQuery = "SELECT friend_id FROM friends WHERE user_id = :userID";
         return jdbc.query(sklQuery,namedParameters, friendMapper);
     }
+
+    @Override
+    public boolean existsById(int userID) {
+        log.info("В классе {} запущен метод проверки существования пользователя с id = {}", UserDbStorage.class.getName(), userID);
+        SqlParameterSource namedParameters = new MapSqlParameterSource().addValue("userID", userID);
+        String sqlQuery = "SELECT COUNT(*) FROM users WHERE user_id = :userID";
+        Integer count = jdbc.queryForObject(sqlQuery, namedParameters, Integer.class);
+        return count != null && count > 0;
+    }
+
+    public boolean existsFriend(int userId, int friendId) {
+        log.info("В классе {} запущен метод по проверке дружбы между пользователями с id = {} и id = {}",
+                UserDbStorage.class.getName(), userId, friendId);
+        String sqlQuery = "SELECT COUNT(*) FROM friends WHERE user_id = :userId AND friend_id = :friendId";
+        SqlParameterSource namedParameters = new MapSqlParameterSource()
+                .addValue("userId", userId)
+                .addValue("friendId", friendId);
+        Integer count = jdbc.queryForObject(sqlQuery, namedParameters, Integer.class);
+        return count != null && count > 0;
+    }
+
+
 }

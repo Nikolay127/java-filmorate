@@ -17,16 +17,16 @@ public class GenreController {
     private final GenreService service;
 
     @GetMapping("/{genreId}")
-    public Optional<Genre> getGenre(@PathVariable("genreId") String id) {
-        log.info("В контроллере {} вызван метод по получению жанра с id = {}",
+    public Optional<Genre> getGenre(@PathVariable("genreId") Integer id) {
+        log.debug("В контроллере {} вызван метод по получению жанра с id = {}",
                 GenreController.class.getName(),
                 id);
-        return service.getGenreById(Integer.parseInt(id));
+        return service.getGenreById(id);
     }
 
     @GetMapping
     public Optional<List<Genre>> getAllGenre() {
-        log.info("В контроллере {} вызван метод по получению всех жанров", GenreController.class.getName());
+        log.debug("В контроллере {} вызван метод по получению всех жанров", GenreController.class.getName());
         return service.getGenres();
     }
 }

@@ -25,20 +25,20 @@ public class FilmController {
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
     public Optional<List<FilmDto>> getFilms() {
-        log.info("В контроллере {} запущен метод получения всех фильмов", FilmController.class.getName());
+        log.debug("В контроллере {} запущен метод получения всех фильмов", FilmController.class.getName());
         return filmService.getAllFilms();
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public Optional<FilmDto> createFilm(@Valid @RequestBody RequestCreateFilm request) {
-        log.info("В контроллере {} запущен метод для создания фильма", FilmController.class.getName());
+        log.debug("В контроллере {} запущен метод для создания фильма", FilmController.class.getName());
         return filmService.createFilm(request);
     }
 
     @GetMapping("{filmId}")
     public Optional<FilmDto> getFilmById(@PathVariable("filmId") Integer id) {
-        log.info("В контроллере {} запущен метод для получения пользователя с id = {}",
+        log.debug("В контроллере {} запущен метод для получения пользователя с id = {}",
                 FilmController.class.getName(),
                 id);
         return filmService.getFilmById(id);
@@ -46,34 +46,34 @@ public class FilmController {
 
     @PutMapping
     public Optional<FilmDto> updateFilm(@Valid @RequestBody RequestUpdateFilm request) {
-        log.info("В контроллере {} запущен метод для обновления фильма", FilmController.class.getName());
+        log.debug("В контроллере {} запущен метод для обновления фильма", FilmController.class.getName());
         return filmService.updateFilm(request);
     }
 
     @DeleteMapping("/{id}")
     public void deleteFilm(@PathVariable("id") final int filmId) {
-        log.info("В контроллере {} запущен метод для удаления пользователя", FilmController.class.getName());
+        log.debug("В контроллере {} запущен метод для удаления пользователя", FilmController.class.getName());
         filmService.deleteFilm(filmId);
     }
 
     @PutMapping("/{id}/like/{userId}")
     @ResponseStatus(HttpStatus.OK)
     public void addLike(@PathVariable int id, @PathVariable int userId) {
-        log.info("В контроллере {} запущен метод для проставления лайка фильму", FilmController.class.getName());
+        log.debug("В контроллере {} запущен метод для проставления лайка фильму", FilmController.class.getName());
         filmService.addLike(id, userId);
     }
 
     @DeleteMapping("/{id}/like/{userId}")
     @ResponseStatus(HttpStatus.OK)
     public void deleteLike(@PathVariable int id, @PathVariable int userId) {
-        log.info("В контроллере {} запущен метод для удаления лайка у фильма", FilmController.class.getName());
+        log.debug("В контроллере {} запущен метод для удаления лайка у фильма", FilmController.class.getName());
         filmService.deleteLike(id, userId);
     }
 
     @GetMapping("/popular")
     @ResponseStatus(HttpStatus.OK)
-    public Optional<List<FilmDto>> getPopularFilms(@RequestParam(defaultValue = "10") String count) {
-        log.info("В контроллере {} запущен метод для получения списка популярных фильмов", FilmController.class.getName());
+    public Optional<List<FilmDto>> getPopularFilms(@RequestParam(defaultValue = "10") Integer count) {
+        log.debug("В контроллере {} запущен метод для получения списка популярных фильмов", FilmController.class.getName());
         return filmService.getPopularFilms(count);
     }
 }

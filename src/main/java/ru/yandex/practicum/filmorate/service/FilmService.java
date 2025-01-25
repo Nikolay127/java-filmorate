@@ -4,8 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.exceptions.NotFoundUserException;
-import ru.yandex.practicum.filmorate.exceptions.NotValidParamException;
+import ru.yandex.practicum.filmorate.exceptions.*;
 import ru.yandex.practicum.filmorate.model.ID;
 import ru.yandex.practicum.filmorate.model.RequestCreateFilm;
 import ru.yandex.practicum.filmorate.model.RequestUpdateFilm;
@@ -31,16 +30,26 @@ public class FilmService {
 
     public Optional<FilmDto> createFilm(RequestCreateFilm requestFilm) {
         log.info("В классе {} запущен метод по созданию фильма", FilmService.class.getName());
-        Validate.validateFilm(requestFilm.getFilmDto());
+        Optional<String> validationError = Validate.validateFilm(requestFilm.getFilmDto());
+        if (validationError.isPresent()) {
+            throw new ValidationException(validationError.get());
+        }
         log.info("Валидация фильма {} прошла успешно", requestFilm);
         if (requestFilm.getGenres() != null) {
-            Validate.validateGenre(genreStorage.getGenres(), requestFilm.getGenres());
+            Optional<String> validationGenreError = Validate.validateGenre(genreStorage.getGenres(),
+                    requestFilm.getGenres());
+            if (validationGenreError.isPresent()) {
+                throw new NotFoundGenre(validationGenreError.get());
+            }
         }
         log.info("Валидация переданного жанра фильма прошла успешно");
         if (requestFilm.getMpa() != null) {
             List<ID> mpaList = new ArrayList<>();
             mpaList.add(requestFilm.getMpa());
-            Validate.validateMpa(ratingStorage.getAllMpa(), mpaList);
+            Optional<String> validationMpaError = Validate.validateMpa(ratingStorage.getAllMpa(), mpaList);
+            if (validationMpaError.isPresent()) {
+                throw new NotFoundRating(validationMpaError.get());
+            }
         }
         log.info("Валидация переданного рейтинга фильма прошла успешно");
         ResponseFilm response = storage.createFilm(requestFilm);
@@ -57,7 +66,10 @@ public class FilmService {
         log.info("В классе {} запущен метод по обновлению фильма с id = {}",
                 FilmService.class.getName(),
                 request.getId());
-        Validate.validateFilm(request.getFilmDto());
+        Optional<String> validationError = Validate.validateFilm(request.getFilmDto());
+        if (validationError.isPresent()) {
+            throw new ValidationException(validationError.get());
+        }
         log.info("Фильм с id = {} успешно прошел валидацию", request.getId());
         ResponseFilm response = storage.updateFilm(request.getRequestFilm());
         log.info("Фильм с id = {} успешно прошел обновлён", request.getId());
@@ -74,7 +86,7 @@ public class FilmService {
                 FilmService.class.getName(),
                 filmID,
                 userID);
-        if (userStorage.getUserById(userID) == null) {
+        if (!userStorage.existsById(userID)) {
             throw new NotFoundUserException();
         }
         if (!storage.getLikesFilm(filmID).contains(userID)) {
@@ -87,7 +99,7 @@ public class FilmService {
                 FilmService.class.getName(),
                 filmID,
                 userID);
-        if (!storage.getLikesFilm(filmID).contains(userID)) {
+        if (!storage.hasLike(filmID, userID)) {
             throw new NotFoundUserException();
         }
         storage.deleteLike(filmID, userID);
@@ -98,29 +110,8 @@ public class FilmService {
         return Optional.ofNullable(storage.getAllFilms());
     }
 
-    public Optional<List<FilmDto>> getPopularFilms(String countStr) {
+    public Optional<List<FilmDto>> getPopularFilms(Integer countStr) {
         log.info("В классе {} запущен метод по получению {} популярных фильмов", FilmService.class.getName(), countStr);
-        int count;
-        try {
-            count = Integer.parseInt(countStr);
-        } catch (NumberFormatException e) {
-            throw new NotValidParamException(e.getMessage());
-        }
-        Map<Integer, List<Integer>> likes = storage.getLikesFilms();
-        TreeSet<Integer> sortedFilms = new TreeSet<>(new Comparator<>() {
-            int likes1;
-            int likes2;
-            @Override
-            public int compare(Integer filmOne, Integer filmTwo) {
-                likes1 = likes.get(filmOne).size();
-                likes2 = likes.get(filmTwo).size();
-                return likes2 - likes1;
-            }
-        });
-        sortedFilms.addAll(likes.keySet());
-        return Optional.of(sortedFilms.stream().limit(count)
-                .map(storage::getFilmById)
-                .map(ResponseFilm::getFilmDto)
-                .toList());
+        return Optional.of(storage.getPopularFilms(countStr));
     }
 }
