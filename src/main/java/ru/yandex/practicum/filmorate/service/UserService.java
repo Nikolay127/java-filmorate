@@ -23,9 +23,9 @@ public class UserService {
 
     public Optional<UserDto> createUser(RequestUser request) {
         log.info("В классе {} запущен метод по созданию пользователя", UserService.class.getName());
-        Optional<String> validationError = Validate.validateUser(request.getUserDto());
-        if (validationError.isPresent()) {
-            throw new ValidationException(validationError.get());
+        String validationError = Validate.validateUser(request.getUserDto());
+        if (validationError != null) {
+            throw new ValidationException(validationError);
         }
         UserDto newUser = storage.createUser(request).getUserDto();
         log.info("Добавлен новый пользователь, id пользователя: {}", newUser.getId());
@@ -42,9 +42,9 @@ public class UserService {
         log.info("В классе {} запущен метод по обновлению пользователя с id = {}",
                 UserService.class.getName(),
                 request.getId());
-        Optional<String> validationError = Validate.validateUser(request.getUserDto());
-        if (validationError.isPresent()) {
-            throw new ValidationException(validationError.get());
+        String validationError = Validate.validateUser(request.getUserDto());
+        if (validationError != null) {
+            throw new ValidationException(validationError);
         }
         log.info("Пользователь с id = {} успешно прошел валидацию", request.getId());
         if (!storage.existsById(request.getId())) {

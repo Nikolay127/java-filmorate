@@ -19,9 +19,9 @@ public class GenreService {
     public Optional<Genre> getGenreById(int id) {
         log.info("В классе {} запущен метод по получению жанра с id = {}", GenreService.class.getName(), id);
         Genre genre = storage.getGenre(id);
-        Optional<String> validationError = Validate.validateGenre(genre);
-        if (validationError.isPresent()) {
-            throw new NotFoundGenre(validationError.get());
+        String validationError = Validate.validateGenre(genre);
+        if (validationError != null) {
+            throw new NotFoundGenre(validationError);
         }
         log.info("Жанр с id = {} успешно прошел валидацию", id);
         return Optional.of(genre);

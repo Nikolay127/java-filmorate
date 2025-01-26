@@ -19,9 +19,9 @@ public class MpaService {
     public Optional<Mpa> getMpaById(int id) {
         log.info("В классе {} запущен метод по получению рейтинга с id = {}", MpaService.class.getName(), id);
         Mpa mpa = storage.getMpa(id);
-        Optional<String> validationError = Validate.validateMpa(mpa);
-        if (validationError.isPresent()) {
-            throw new NotFoundRating(validationError.get());
+        String validationError = Validate.validateMpa(mpa);
+        if (validationError != null) {
+            throw new NotFoundRating(validationError);
         }
         return Optional.of(mpa);
     }

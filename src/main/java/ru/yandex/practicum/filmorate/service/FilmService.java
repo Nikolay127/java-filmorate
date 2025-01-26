@@ -30,25 +30,25 @@ public class FilmService {
 
     public Optional<FilmDto> createFilm(RequestCreateFilm requestFilm) {
         log.info("В классе {} запущен метод по созданию фильма", FilmService.class.getName());
-        Optional<String> validationError = Validate.validateFilm(requestFilm.getFilmDto());
-        if (validationError.isPresent()) {
-            throw new ValidationException(validationError.get());
+        String validationError = Validate.validateFilm(requestFilm.getFilmDto());
+        if (validationError != null) {
+            throw new ValidationException(validationError);
         }
         log.info("Валидация фильма {} прошла успешно", requestFilm);
         if (requestFilm.getGenres() != null) {
-            Optional<String> validationGenreError = Validate.validateGenre(genreStorage.getGenres(),
+            String validationGenreError = Validate.validateGenre(genreStorage.getGenres(),
                     requestFilm.getGenres());
-            if (validationGenreError.isPresent()) {
-                throw new NotFoundGenre(validationGenreError.get());
+            if (validationGenreError != null) {
+                throw new NotFoundGenre(validationGenreError);
             }
         }
         log.info("Валидация переданного жанра фильма прошла успешно");
         if (requestFilm.getMpa() != null) {
             List<ID> mpaList = new ArrayList<>();
             mpaList.add(requestFilm.getMpa());
-            Optional<String> validationMpaError = Validate.validateMpa(ratingStorage.getAllMpa(), mpaList);
-            if (validationMpaError.isPresent()) {
-                throw new NotFoundRating(validationMpaError.get());
+            String validationMpaError = Validate.validateMpa(ratingStorage.getAllMpa(), mpaList);
+            if (validationMpaError != null) {
+                throw new NotFoundRating(validationMpaError);
             }
         }
         log.info("Валидация переданного рейтинга фильма прошла успешно");
@@ -66,9 +66,9 @@ public class FilmService {
         log.info("В классе {} запущен метод по обновлению фильма с id = {}",
                 FilmService.class.getName(),
                 request.getId());
-        Optional<String> validationError = Validate.validateFilm(request.getFilmDto());
-        if (validationError.isPresent()) {
-            throw new ValidationException(validationError.get());
+        String validationError = Validate.validateFilm(request.getFilmDto());
+        if (validationError != null) {
+            throw new ValidationException(validationError);
         }
         log.info("Фильм с id = {} успешно прошел валидацию", request.getId());
         ResponseFilm response = storage.updateFilm(request.getRequestFilm());
@@ -110,8 +110,8 @@ public class FilmService {
         return Optional.ofNullable(storage.getAllFilms());
     }
 
-    public Optional<List<FilmDto>> getPopularFilms(Integer countStr) {
+    public List<FilmDto> getPopularFilms(Integer countStr) {
         log.info("В классе {} запущен метод по получению {} популярных фильмов", FilmService.class.getName(), countStr);
-        return Optional.of(storage.getPopularFilms(countStr));
+        return storage.getPopularFilms(countStr);
     }
 }
