@@ -1,107 +1,117 @@
 package ru.yandex.practicum.filmorate.service;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
-import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
-import ru.yandex.practicum.filmorate.storage.user.UserStorage;
+import ru.yandex.practicum.filmorate.exceptions.*;
+import ru.yandex.practicum.filmorate.model.ID;
+import ru.yandex.practicum.filmorate.model.RequestCreateFilm;
+import ru.yandex.practicum.filmorate.model.RequestUpdateFilm;
+import ru.yandex.practicum.filmorate.model.dto.FilmDto;
+import ru.yandex.practicum.filmorate.storage.FilmStorage;
+import ru.yandex.practicum.filmorate.storage.UserStorage;
+import ru.yandex.practicum.filmorate.storage.database.GenreDbStorage;
+import ru.yandex.practicum.filmorate.storage.database.RatingDbStorage;
+import ru.yandex.practicum.filmorate.storage.database.response.ResponseFilm;
 
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
+@Slf4j
 @Service
+@RequiredArgsConstructor
 public class FilmService {
-
-    private static final Logger log = LoggerFactory.getLogger(FilmService.class);
-    private final FilmStorage filmStorage;
+    @Qualifier("filmDbStorage")
+    private final FilmStorage storage;
+    @Qualifier("userDbStorage")
     private final UserStorage userStorage;
+    private final GenreDbStorage genreStorage;
+    private final RatingDbStorage ratingStorage;
 
-    @Autowired
-    public FilmService(FilmStorage filmStorage, UserStorage userStorage) {
-        this.filmStorage = filmStorage;
-        this.userStorage = userStorage;
-    }
-
-    public Collection<Film> getAllFilms() {
-        log.info("В сервисе {} вызван метод по получению списка всех фильмов", FilmService.class.getName());
-        return filmStorage.getAllFilms();
-    }
-
-    public Film createFilm(Film film) {
-        log.info("В сервисе {} вызван метод по созданию фильма", FilmService.class.getName());
-        validateDataReleaseAndName(film);
-        log.info("У фильма {} успешно пройдена валидация даты релиза и названия", film);
-        log.info("Вызывается метод по созданию фильма {}", film);
-        return filmStorage.createFilm(film);
-    }
-
-    public Film updateFilm(Film film) {
-        log.info("В сервисе {} вызван метод по обновлению фильма", FilmService.class.getName());
-        validateDataReleaseAndName(film);
-        log.info("У обновляемого фильма {} успешно пройдена валидация даты релиза и названия", film);
-        log.info("Вызывается метод по обновлению фильма {}", film);
-        return filmStorage.updateFilm(film);
-    }
-
-    public Film addLike(Long filmId, Long userId) {
-        log.info("Вызван метод проставления лайка фильму с id {} от пользователя с id {}", filmId, userId);
-        if (!isFilmExist(filmId)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Запрашиваемого фильма нет");
+    public Optional<FilmDto> createFilm(RequestCreateFilm requestFilm) {
+        log.info("В классе {} запущен метод по созданию фильма", FilmService.class.getName());
+        String validationError = Validate.validateFilm(requestFilm.getFilmDto());
+        if (validationError != null) {
+            throw new ValidationException(validationError);
         }
-        if (!isUserExist(userId)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Запрашиваемого пользователя нет");
+        log.info("Валидация фильма {} прошла успешно", requestFilm);
+        if (requestFilm.getGenres() != null) {
+            String validationGenreError = Validate.validateGenre(genreStorage.getGenres(),
+                    requestFilm.getGenres());
+            if (validationGenreError != null) {
+                throw new NotFoundGenre(validationGenreError);
+            }
         }
-        filmStorage.getFilm(filmId).addLike(userId);
-//        filmStorage.getFilm(filmId).getLikes().add(userId);
-        log.info("Поставлен лайка фильму с id {} от пользователя с id {}", filmId, userId);
-        return filmStorage.getFilm(filmId);
-    }
-
-    public Film deleteLike(Long filmId, Long userId) {
-        log.info("Вызван метод удаления лайка с фильма с id {} от пользователя с id {}", filmId, userId);
-        if (!isFilmExist(filmId)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Запрашиваемого фильма нет");
+        log.info("Валидация переданного жанра фильма прошла успешно");
+        if (requestFilm.getMpa() != null) {
+            List<ID> mpaList = new ArrayList<>();
+            mpaList.add(requestFilm.getMpa());
+            String validationMpaError = Validate.validateMpa(ratingStorage.getAllMpa(), mpaList);
+            if (validationMpaError != null) {
+                throw new NotFoundRating(validationMpaError);
+            }
         }
-        if (!isUserExist(userId)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Запрашиваемого пользователя нет");
+        log.info("Валидация переданного рейтинга фильма прошла успешно");
+        ResponseFilm response = storage.createFilm(requestFilm);
+        log.info("Фильм {} успешно создан в базе данных", requestFilm);
+        return Optional.ofNullable(response.getFilmDto());
+    }
+
+    public Optional<FilmDto> getFilmById(int id) {
+        log.info("В классе {} запущен метод по получению фильма с id = {}", FilmService.class.getName(), id);
+        return Optional.ofNullable(storage.getFilmById(id).getFilmDto());
+    }
+
+    public Optional<FilmDto> updateFilm(RequestUpdateFilm request) {
+        log.info("В классе {} запущен метод по обновлению фильма с id = {}",
+                FilmService.class.getName(),
+                request.getId());
+        String validationError = Validate.validateFilm(request.getFilmDto());
+        if (validationError != null) {
+            throw new ValidationException(validationError);
         }
-        filmStorage.getFilm(filmId).removeLike(userId);
-//        filmStorage.getFilm(filmId).getLikes().remove(userId);
-        log.info("Удален лайк фильму с id {} от пользователя с id {}", filmId, userId);
-        return filmStorage.getFilm(filmId);
+        log.info("Фильм с id = {} успешно прошел валидацию", request.getId());
+        ResponseFilm response = storage.updateFilm(request.getRequestFilm());
+        log.info("Фильм с id = {} успешно прошел обновлён", request.getId());
+        return Optional.ofNullable(response.getFilmDto());
     }
 
-    public Collection<Film> getPopularFilms(Long id) {
-        log.info("Вызван метод получения самых популярных фильмов");
-        List<Film> allFilms = new ArrayList<>(filmStorage.getAllFilms());
-        // Сортируем фильмы по количеству лайков в порядке убывания
-        allFilms.sort((film1, film2) -> Long.compare(film2.getRate(), film1.getRate()));
-        // Ограничиваем количество фильмов до указанного числа
-        List<Film> popularFilms = allFilms.subList(0, Math.min(id.intValue(), allFilms.size()));
-        log.info("Сформирован список популярных фильмов: {}", popularFilms);
-        return popularFilms;
+    public void deleteFilm(final int filmID) {
+        log.info("В классе {} запущен метод по удалению фильма с id = {}", FilmService.class.getName(), filmID);
+        storage.deleteFilm(filmID);
     }
 
-    private boolean isFilmExist(Long filmId) {
-        return filmStorage.getAllFilms().contains(filmStorage.getFilm(filmId));
-    }
-
-    private boolean isUserExist(Long userId) {
-        return userStorage.getAllUsers().contains(userStorage.getUser(userId));
-    }
-
-    private void validateDataReleaseAndName(Film film) {
-        if (film.getReleaseDate().isBefore(LocalDate.of(1895, 12, 28))) {
-            log.error("Фильм {} не создан, по причине неверной даты релиза", film);
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Дата релиза — не раньше 28 декабря 1895 года");
-        } else if (film.getName().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Название фильма не может быть пустым");
+    public void addLike(final int filmID, final int userID) {
+        log.info("В классе {} запущен метод по проставлению лайка фильму с id = {} от пользователя с id = {}",
+                FilmService.class.getName(),
+                filmID,
+                userID);
+        if (!userStorage.existsById(userID)) {
+            throw new NotFoundUserException();
         }
+        if (!storage.getLikesFilm(filmID).contains(userID)) {
+            storage.addLike(filmID, userID);
+        }
+    }
+
+    public void deleteLike(final int filmID, final int userID) {
+        log.info("В классе {} запущен метод по удалению лайка у фильма с id = {} от пользователя с id = {}",
+                FilmService.class.getName(),
+                filmID,
+                userID);
+        if (!storage.hasLike(filmID, userID)) {
+            throw new NotFoundUserException();
+        }
+        storage.deleteLike(filmID, userID);
+    }
+
+    public Optional<List<FilmDto>> getAllFilms() {
+        log.info("В классе {} запущен метод по получению всех фильмов", FilmService.class.getName());
+        return Optional.ofNullable(storage.getAllFilms());
+    }
+
+    public List<FilmDto> getPopularFilms(Integer countStr) {
+        log.info("В классе {} запущен метод по получению {} популярных фильмов", FilmService.class.getName(), countStr);
+        return storage.getPopularFilms(countStr);
     }
 }
